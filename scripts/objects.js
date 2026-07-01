@@ -10,6 +10,7 @@ class CuerpoCeleste {
     this.ay = 0;
     this.radio = radio;
     this.color = color;
+    this.trayectoria = [];
   }
 
   calcularDistancia(otroCuerpo) {

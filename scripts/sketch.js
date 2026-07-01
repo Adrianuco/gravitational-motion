@@ -3,53 +3,30 @@ let sol;
 let tierra;
 let contadorCuerposAgregados = 0;
 
-const ESCALA = 1e-9;
-// 1 metro real = 0.000000001 px
-
-let trayectoria = [];
+let escala = 1e-9;
+// 1 metro real = escala px
 
 function setup() {
   const canvas = createCanvas(1000, 700);
   canvas.parent("canvas-container");
 
   inicializarFormularioCuerpo();
+  inicializarPlanetasPredeterminados();
+  inicializarFormularioEstrella();
+
+  const btnRestablecer = document.getElementById("btnRestablecer");
+  if (btnRestablecer) {
+    btnRestablecer.addEventListener("click", restablecerSimulacion);
+  }
 
   universo = new Universo();
 
-  // SOL
-  sol = new CuerpoCeleste("Sol", 1.989e30, 0, 0, 0, 0, 30, "yellow");
-
-  // TIERRA
-  tierra = new CuerpoCeleste(
-    "Tierra",
-    5.972e24,
-
-    // distancia al Sol
-    150e9,
-    0,
-
-    // velocidad orbital
-    0,
-    29885,
-
-    10,
-    "blue",
-  );
-
-  luna = new CuerpoCeleste(
-    "Luna",
-    7.342e22,
-    150e9 + 384400e3,
-    0,
-    tierra.vx,
-    tierra.vy + 1022,
-    5,
-    "gray",
-  );
+  // SOL (Estrella central)
+  sol = new CuerpoCeleste("Sol", 1.989e30, 0, 0, 0, 0, 30, "#ffcc00");
 
   universo.agregarCuerpo(sol);
-  universo.agregarCuerpo(tierra);
-  universo.agregarCuerpo(luna);
+
+  actualizarEscala();
 
   universo.pausado = true;
   pausar();
@@ -62,9 +39,17 @@ function draw() {
 
   universo.actualizar();
 
-  dibujarTrayectoria();
+  // Actualizar indicador de tiempo
+  const cardTiempo = document.querySelector(".card-tiempo");
+  if (cardTiempo) {
+    cardTiempo.textContent = `Tiempo: ${universo.t} s`;
+  }
 
+  // Dibujar trayectorias y cuerpos
   for (let cuerpo of universo.cuerpos) {
+    if (cuerpo !== sol) {
+      dibujarTrayectoriaDeCuerpo(cuerpo);
+    }
     dibujarCuerpo(cuerpo);
   }
 }
@@ -74,6 +59,46 @@ function pausar() {
 
   canvas.addEventListener("click", () => {
     universo.pausado = !universo.pausado;
+  });
+}
+
+const DATOS_PLANETAS = {
+  mercurio: { nombre: "Mercurio", masa: 3.285e23, distancia: 57.9e9, velocidad: 47870, radio: 5, color: "#888888" },
+  venus: { nombre: "Venus", masa: 4.867e24, distancia: 108.2e9, velocidad: 35020, radio: 8, color: "#e3bb76" },
+  tierra: { nombre: "Tierra", masa: 5.972e24, distancia: 149.6e9, velocidad: 29780, radio: 10, color: "#2f6fed" },
+  marte: { nombre: "Marte", masa: 6.39e23, distancia: 227.9e9, velocidad: 24070, radio: 6, color: "#c1440e" },
+  jupiter: { nombre: "Júpiter", masa: 1.898e27, distancia: 778.5e9, velocidad: 13070, radio: 22, color: "#b07f35" },
+  saturno: { nombre: "Saturno", masa: 5.683e26, distancia: 1434e9, velocidad: 9690, radio: 18, color: "#e2bf7d" },
+  urano: { nombre: "Urano", masa: 8.681e25, distancia: 2871e9, velocidad: 6810, radio: 14, color: "#4b70dd" },
+  neptuno: { nombre: "Neptuno", masa: 1.024e26, distancia: 4495e9, velocidad: 5430, radio: 14, color: "#274687" }
+};
+
+function inicializarPlanetasPredeterminados() {
+  const botones = document.querySelectorAll(".planeta-btn");
+  botones.forEach(boton => {
+    boton.addEventListener("click", () => {
+      const key = boton.getAttribute("data-planeta");
+      const datos = DATOS_PLANETAS[key];
+      if (datos && universo) {
+        // distancia en el eje X, velocidad inicial en el eje Y (órbita circular)
+        const cuerpo = new CuerpoCeleste(
+          datos.nombre,
+          datos.masa,
+          datos.distancia,
+          0,
+          0,
+          datos.velocidad,
+          datos.radio,
+          datos.color
+        );
+        universo.agregarCuerpo(cuerpo);
+        actualizarEscala();
+        contadorCuerposAgregados += 1;
+        actualizarMensajeAgregado(
+          `Cuerpo agregado: ${datos.nombre} (#${contadorCuerposAgregados})`
+        );
+      }
+    });
   });
 }
 
@@ -103,6 +128,7 @@ function agregarCuerpoDesdeFormulario() {
 
   const cuerpo = new CuerpoCeleste(nombre, masa, x, y, vx, vy, radio, color);
   universo.agregarCuerpo(cuerpo);
+  actualizarEscala();
 
   contadorCuerposAgregados += 1;
   actualizarMensajeAgregado(
@@ -146,23 +172,102 @@ function dibujarCuerpo(cuerpo) {
   fill(cuerpo.color);
   noStroke();
 
-  circle(cuerpo.x * ESCALA, cuerpo.y * ESCALA, cuerpo.radio);
+  circle(cuerpo.x * escala, cuerpo.y * escala, cuerpo.radio);
 }
 
-function dibujarTrayectoria() {
-  trayectoria.push({
-    x: tierra.x * ESCALA,
-    y: tierra.y * ESCALA,
-  });
+function dibujarTrayectoriaDeCuerpo(cuerpo) {
+  if (!universo.pausado) {
+    cuerpo.trayectoria.push({
+      x: cuerpo.x,
+      y: cuerpo.y
+    });
 
-  stroke(150);
+    if (cuerpo.trayectoria.length > 800) {
+      cuerpo.trayectoria.shift();
+    }
+  }
+
+  stroke(cuerpo.color);
+  strokeWeight(1);
   noFill();
 
   beginShape();
-
-  for (let punto of trayectoria) {
-    vertex(punto.x, punto.y);
+  for (let punto of cuerpo.trayectoria) {
+    vertex(punto.x * escala, punto.y * escala);
   }
-
   endShape();
 }
+
+function actualizarEscala() {
+  if (!universo || universo.cuerpos.length === 0) return;
+
+  let maxDist = 0;
+  for (let cuerpo of universo.cuerpos) {
+    let d = Math.max(Math.abs(cuerpo.x), Math.abs(cuerpo.y));
+    if (d > maxDist) {
+      maxDist = d;
+    }
+  }
+
+  if (maxDist > 0) {
+    // El radio máximo visible es el mínimo entre mitad del ancho y del alto.
+    // Damos un 15% de margen (multiplicador 0.85) para que no queden pegados al borde.
+    const maxVisiblePx = Math.min(width, height) / 2 * 0.85;
+    escala = maxVisiblePx / maxDist;
+  }
+}
+
+function restablecerSimulacion() {
+  universo = new Universo();
+  contadorCuerposAgregados = 0;
+
+  const form = document.querySelector(".data-container");
+  if (form) {
+    form.reset();
+  }
+
+  const nombre = obtenerTexto("estrellaNombre", "Sol");
+  const masa = obtenerNumero("estrellaMasa", 1.989e30);
+  const radio = Math.max(1, obtenerNumero("estrellaRadio", 30));
+  const color = obtenerTexto("estrellaColor", "#ffcc00");
+
+  sol = new CuerpoCeleste(nombre, masa, 0, 0, 0, 0, radio, color);
+  universo.agregarCuerpo(sol);
+
+  actualizarEscala();
+  actualizarMensajeAgregado("");
+
+  universo.pausado = true;
+}
+
+function inicializarFormularioEstrella() {
+  const btn = document.getElementById("btnActualizarEstrella");
+  if (btn) {
+    btn.addEventListener("click", actualizarEstrellaDesdeFormulario);
+  }
+}
+
+function actualizarEstrellaDesdeFormulario() {
+  if (!sol) return;
+
+  const nombre = obtenerTexto("estrellaNombre", "Sol");
+  const masa = obtenerNumero("estrellaMasa", 1.989e30);
+  const radio = Math.max(1, obtenerNumero("estrellaRadio", 30));
+  const color = obtenerTexto("estrellaColor", "#ffcc00");
+
+  sol.nombre = nombre;
+  sol.masa = masa;
+  sol.radio = radio;
+  sol.color = color;
+
+  const msg = document.getElementById("estrella-message");
+  if (msg) {
+    msg.textContent = "Estrella actualizada con éxito.";
+    setTimeout(() => { msg.textContent = ""; }, 3000);
+  }
+
+  actualizarEscala();
+}
+
+
+
