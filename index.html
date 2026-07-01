@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simulacion de Movimiento Gravitacional</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Simulacion de Movimiento Gravitacional</h1>
+      <p>
+        Configura los parametros iniciales para observar el movimiento de los
+        cuerpos bajo la fuerza de gravedad. Los datos se ingresan arriba y el
+        resultado se visualiza en el canvas de abajo.
+      </p>
+      <div class="card-gravedad">Constante G: 6.67 x 10<sup>-11</sup></div>
+      <div class="card-tiempo">Tiempo: 0 s</div>
+    </header>
+
+    <main class="global-container">
+      <form class="data-container">
+        <fieldset class="body-editor-card">
+          <legend>Propiedades de la Estrella Central</legend>
+          <div class="body-editor-grid">
+            <div class="input-container">
+              <label for="estrellaNombre">Nombre</label>
+              <input
+                type="text"
+                name="estrellaNombre"
+                id="estrellaNombre"
+                value="Sol"
+              />
+            </div>
+            <div class="input-container">
+              <label for="estrellaMasa">Masa (kg)</label>
+              <input type="number" name="estrellaMasa" id="estrellaMasa" value="1.989e30" />
+            </div>
+            <div class="input-container">
+              <label for="estrellaRadio">Radio (px)</label>
+              <input
+                type="number"
+                name="estrellaRadio"
+                id="estrellaRadio"
+                min="1"
+                value="30"
+              />
+            </div>
+            <div class="input-container">
+              <label for="estrellaColor">Color</label>
+              <input
+                type="color"
+                name="estrellaColor"
+                id="estrellaColor"
+                value="#ffcc00"
+              />
+            </div>
+          </div>
+          <div class="add-body-container">
+            <button id="btnActualizarEstrella" type="button">Actualizar Estrella</button>
+            <p id="estrella-message" class="agregado-message"></p>
+          </div>
+        </fieldset>
+
+        <fieldset class="body-editor-card">
+          <legend>Agregar Cuerpo Celeste</legend>
+          <div class="body-editor-grid">
+            <div class="input-container">
+              <label for="cuerpoNombre">Nombre</label>
+              <input
+                type="text"
+                name="cuerpoNombre"
+                id="cuerpoNombre"
+                placeholder="Ej. Marte"
+              />
+            </div>
+            <div class="input-container">
+              <label for="cuerpoMasa">Masa (kg)</label>
+              <input type="number" name="cuerpoMasa" id="cuerpoMasa" />
+            </div>
+            <div class="input-container">
+              <label for="distancia">Distancia (m)</label>
+              <input type="number" name="distancia" id="distancia" />
+            </div>
+            <div class="input-container">
+              <label for="velocidad">Velocidad Inicial (m/s)</label>
+              <input type="number" name="velocidad" id="velocidad" />
+            </div>
+            <div class="input-container">
+              <label for="cuerpoRadio">Radio (px)</label>
+              <input
+                type="number"
+                name="cuerpoRadio"
+                id="cuerpoRadio"
+                min="1"
+              />
+            </div>
+            <div class="input-container">
+              <label for="cuerpoColor">Color</label>
+              <input
+                type="color"
+                name="cuerpoColor"
+                id="cuerpoColor"
+                value="#6ea8fe"
+              />
+            </div>
+          </div>
+          <div class="add-body-container">
+            <button id="btnAgregarCuerpo" type="button">Agregar</button>
+            <p id="agregado-message" class="agregado-message"></p>
+          </div>
+        </fieldset>
+
+        <fieldset class="body-editor-card">
+          <legend>Planetas del Sistema Solar (Click para agregar)</legend>
+          <div class="planetas-grid">
+            <button type="button" class="planeta-btn" data-planeta="mercurio">
+              <span class="planeta-icono" style="background-color: #888888;"></span>
+              Mercurio
+            </button>
+            <button type="button" class="planeta-btn" data-planeta="venus">
+              <span class="planeta-icono" style="background-color: #e3bb76;"></span>
+              Venus
+            </button>
+            <button type="button" class="planeta-btn" data-planeta="tierra">
+              <span class="planeta-icono" style="background-color: #2f6fed;"></span>
+              Tierra
+            </button>
+            <button type="button" class="planeta-btn" data-planeta="marte">
+              <span class="planeta-icono" style="background-color: #c1440e;"></span>
+              Marte
+            </button>
+            <button type="button" class="planeta-btn" data-planeta="jupiter">
+              <span class="planeta-icono" style="background-color: #b07f35;"></span>
+              Júpiter
+            </button>
+            <button type="button" class="planeta-btn" data-planeta="saturno">
+              <span class="planeta-icono" style="background-color: #e2bf7d;"></span>
+              Saturno
+            </button>
+            <button type="button" class="planeta-btn" data-planeta="urano">
+              <span class="planeta-icono" style="background-color: #4b70dd;"></span>
+              Urano
+            </button>
+            <button type="button" class="planeta-btn" data-planeta="neptuno">
+              <span class="planeta-icono" style="background-color: #274687;"></span>
+              Neptuno
+            </button>
+          </div>
+        </fieldset>
+
+        <div class="button-container">
+          <button id="btnRestablecer" type="button">Restablecer</button>
+          <button id="btnAplicar" type="button">Aplicar</button>
+        </div>
+      </form>
+
+      <section id="canvas-container" aria-label="Simulacion"></section>
+    </main>
+
+    <script src="scripts/objects.js"></script>
+    <script src="scripts/sketch.js"></script>
+  </body>
+</html>
