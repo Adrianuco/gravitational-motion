@@ -8,15 +8,11 @@ class CuerpoCeleste {
     this.vy = vy;
     this.ax = 0;
     this.ay = 0;
+    this.fx = 0;
+    this.fy = 0;
     this.radio = radio;
     this.color = color;
     this.trayectoria = [];
-  }
-
-  calcularDistancia(otroCuerpo) {
-    const dx = otroCuerpo.x - this.x;
-    const dy = otroCuerpo.y - this.y;
-    return Math.sqrt(dx ** 2 + dy ** 2);
   }
 
   calcularFuerzaGravitatoria(otroCuerpo) {
@@ -43,6 +39,9 @@ class CuerpoCeleste {
   }
 
   aplicarFuerza(F) {
+    this.fx += F.fx;
+    this.fy += F.fy;
+
     this.ax += F.fx / this.masa;
     this.ay += F.fy / this.masa;
   }
@@ -57,11 +56,15 @@ class CuerpoCeleste {
     this.y += this.vy * dt;
   }
 
-  reiniciarAceleracion() {
+  reiniciarFuerzas() {
     this.ax = 0;
     this.ay = 0;
+
+    this.fx = 0;
+    this.fy = 0;
   }
 
+  // funcion principal que actualiza la posicion
   actualizar(dt) {
     this.actualizarVelocidad(dt);
     this.actualizarPosicion(dt);
@@ -80,30 +83,36 @@ class Universo {
     this.cuerpos.push(cuerpo);
   }
 
+  // calculamos las fuerzas gravitatorias entre todos los cuerpos y actualizamos sus aceleraciones
   calcularFuerzas() {
     for (let cuerpo of this.cuerpos) {
-      cuerpo.reiniciarAceleracion();
+      cuerpo.reiniciarFuerzas();
     }
 
+    // recorremos pares
     for (let i = 0; i < this.cuerpos.length; i++) {
       for (let j = i + 1; j < this.cuerpos.length; j++) {
         const cuerpoA = this.cuerpos[i];
         const cuerpoB = this.cuerpos[j];
 
+        // fuerza entre ambos
         const fuerza = cuerpoA.calcularFuerzaGravitatoria(cuerpoB);
 
+        // aplicamos la fuerza
         cuerpoA.aplicarFuerza(fuerza);
         cuerpoB.aplicarFuerza({ fx: -fuerza.fx, fy: -fuerza.fy });
       }
     }
   }
 
+  // actualizamos posicion todos los cuerpos
   actualizarCuerpos() {
     for (let cuerpo of this.cuerpos) {
       cuerpo.actualizar(this.dt);
     }
   }
 
+  // iteracion principal: actualizamos el universo, calculando fuerzas y actualizando posiciones
   actualizar() {
     if (this.pausado) return;
 

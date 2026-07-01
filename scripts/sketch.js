@@ -84,8 +84,7 @@ function draw() {
 
     for (let cuerpo of universo.cuerpos) {
       if (cuerpo !== sol) {
-        // Vector velocidad (Verde)
-        // Escala: 1 px por cada 500 m/s (factor 0.002)
+        // vector velocidad 1 m = 0.002 px
         dibujarVector(
           cuerpo.x,
           cuerpo.y,
@@ -95,18 +94,211 @@ function draw() {
           "v",
         );
 
-        // Vector fuerza/aceleración (Rojo)
-        // Escala: 1 px por cada 0.000125 m/s^2 (factor 8000)
+        // vector fuerza 1 N = 1e-21 px
         dibujarVector(
           cuerpo.x,
           cuerpo.y,
-          cuerpo.ax * 8000,
-          cuerpo.ay * 8000,
+          cuerpo.fx * 1e-21,
+          cuerpo.fy * 1e-21,
           "#dc3545",
           "F",
         );
       }
     }
+  }
+}
+
+// funcion para evento de agregar planetas predeterminados
+function inicializarPlanetasPredeterminados() {
+  const botones = document.querySelectorAll(".planeta-btn");
+  botones.forEach((boton) => {
+    boton.addEventListener("click", () => {
+      // conseguimos el key desde el html
+      const key = boton.getAttribute("data-planeta");
+      const datos = DATOS_PLANETAS[key];
+      if (datos && universo) {
+        // instanciamos el cuerpo y lo agregamos al universo
+        const cuerpo = new CuerpoCeleste(
+          datos.nombre,
+          datos.masa,
+          datos.distancia,
+          0,
+          0,
+          datos.velocidad,
+          datos.radio,
+          datos.color,
+        );
+        universo.agregarCuerpo(cuerpo);
+
+        // actualizamos la escala
+        actualizarEscala();
+        contadorCuerposAgregados += 1;
+        actualizarMensajeAgregado(
+          `Cuerpo agregado: ${datos.nombre} (#${contadorCuerposAgregados})`,
+        );
+      }
+    });
+  });
+}
+
+// funcion para agregar el cuerpo
+function agregarCuerpoDesdeFormulario() {
+  if (!universo) {
+    return;
+  }
+
+  // obtenemos los datos desde el formulario
+  const nombre = obtenerTexto("cuerpoNombre", "Cuerpo");
+  const masa = obtenerNumero("cuerpoMasa", 1e20);
+  const x = obtenerNumero("distancia", 0);
+  const y = 0;
+  const vx = 0;
+  const vy = obtenerNumero("velocidad", 0);
+  const radio = Math.max(1, obtenerNumero("cuerpoRadio", 8));
+  const color = obtenerTexto("cuerpoColor", "#6ea8fe");
+
+  // instanciamos, agregamos al universo y actualizamos la escala
+  const cuerpo = new CuerpoCeleste(nombre, masa, x, y, vx, vy, radio, color);
+  universo.agregarCuerpo(cuerpo);
+  actualizarEscala();
+
+  contadorCuerposAgregados += 1;
+  actualizarMensajeAgregado(
+    `Cuerpo agregado: ${nombre} (#${contadorCuerposAgregados})`,
+  );
+}
+
+// funcion para dibujar el cuerpo celeste
+function dibujarCuerpo(cuerpo) {
+  fill(cuerpo.color);
+  noStroke();
+
+  circle(cuerpo.x * escala, cuerpo.y * escala, cuerpo.radio);
+}
+
+// funcion para dibujar la trayectoria del cuerpo
+function dibujarTrayectoriaDeCuerpo(cuerpo) {
+  if (!universo.pausado) {
+    // agregamos el punto actual a la trayectoria
+    cuerpo.trayectoria.push({
+      x: cuerpo.x,
+      y: cuerpo.y,
+    });
+
+    if (cuerpo.trayectoria.length > 800) {
+      cuerpo.trayectoria.shift();
+    }
+  }
+
+  stroke(cuerpo.color);
+  strokeWeight(1);
+  noFill();
+
+  // dibujamos la trayectoria
+  beginShape();
+  for (let punto of cuerpo.trayectoria) {
+    vertex(punto.x * escala, punto.y * escala);
+  }
+  endShape();
+}
+
+// funcion para restablecer la simulacion
+function restablecerSimulacion() {
+  // instanciamos universo
+  universo = new Universo();
+  contadorCuerposAgregados = 0;
+
+  // limpiamos el formulario
+  const form = document.querySelector(".data-container");
+  if (form) {
+    form.reset();
+  }
+
+  // agregamos el sol por defecto y actualizamos la escala
+  const datos = DATOS_PLANETAS["sol"];
+  sol = new CuerpoCeleste(
+    datos.nombre,
+    datos.masa,
+    0,
+    0,
+    0,
+    0,
+    datos.radio,
+    datos.color,
+  );
+
+  universo.agregarCuerpo(sol);
+
+  actualizarEscala();
+  actualizarMensajeAgregado("");
+
+  universo.pausado = true;
+}
+
+// actualizar la estrella desde el formulario
+function actualizarEstrellaDesdeFormulario() {
+  if (!sol) return;
+
+  // obtenemos los datos desde el formulario
+  const datos = DATOS_PLANETAS["sol"];
+  const nombre = obtenerTexto("estrellaNombre", datos.nombre);
+  const masa = obtenerNumero("estrellaMasa", datos.masa);
+  const radio = obtenerNumero("estrellaRadio", datos.radio);
+  const color = obtenerTexto("estrellaColor", datos.color);
+
+  // actualizamos los datos del sol
+  sol.nombre = nombre;
+  sol.masa = masa;
+  sol.radio = radio;
+  sol.color = color;
+
+  // mostramos mensaje
+  const msg = document.getElementById("estrella-message");
+  if (msg) {
+    msg.textContent = "Estrella actualizada con éxito.";
+    setTimeout(() => {
+      msg.textContent = "";
+    }, 3000);
+  }
+
+  actualizarEscala();
+}
+
+function dibujarVector(x, y, dx, dy, color, label) {
+  const px = x * escala;
+  const py = y * escala;
+
+  // calcular la longitud del vector
+  const targetX = px + dx;
+  const targetY = py + dy;
+
+  // dibujamos la linea
+  stroke(color);
+  strokeWeight(2);
+  line(px, py, targetX, targetY);
+
+  // utlizamos push y pop para poder manipular el canvas
+  push();
+
+  // movemos el origen al final del vector y rotamos para dibujar el triangulo
+  translate(targetX, targetY);
+
+  // calculamos el angulo y rotamos
+  let angle = atan2(dy, dx);
+  rotate(angle);
+  let arrowSize = 6;
+  fill(color);
+  noStroke();
+  triangle(0, 0, -arrowSize, -arrowSize / 2, -arrowSize, arrowSize / 2);
+
+  pop();
+
+  // etiqueta del vector
+  if (label) {
+    fill(color);
+    noStroke();
+    textSize(11);
+    text(label, targetX + 5, targetY + 3);
   }
 }
 
@@ -175,70 +367,15 @@ const DATOS_PLANETAS = {
     radio: 14,
     color: "#274687",
   },
+  sol: {
+    nombre: "Sol",
+    masa: 1.989e30,
+    distancia: 0,
+    velocidad: 0,
+    radio: 30,
+    color: "#ffcc00",
+  },
 };
-
-function inicializarPlanetasPredeterminados() {
-  const botones = document.querySelectorAll(".planeta-btn");
-  botones.forEach((boton) => {
-    boton.addEventListener("click", () => {
-      const key = boton.getAttribute("data-planeta");
-      const datos = DATOS_PLANETAS[key];
-      if (datos && universo) {
-        // distancia en el eje X, velocidad inicial en el eje Y (órbita circular)
-        const cuerpo = new CuerpoCeleste(
-          datos.nombre,
-          datos.masa,
-          datos.distancia,
-          0,
-          0,
-          datos.velocidad,
-          datos.radio,
-          datos.color,
-        );
-        universo.agregarCuerpo(cuerpo);
-        actualizarEscala();
-        contadorCuerposAgregados += 1;
-        actualizarMensajeAgregado(
-          `Cuerpo agregado: ${datos.nombre} (#${contadorCuerposAgregados})`,
-        );
-      }
-    });
-  });
-}
-
-function inicializarFormularioCuerpo() {
-  const botonAgregar = document.getElementById("btnAgregarCuerpo");
-
-  if (!botonAgregar) {
-    return;
-  }
-
-  botonAgregar.addEventListener("click", agregarCuerpoDesdeFormulario);
-}
-
-function agregarCuerpoDesdeFormulario() {
-  if (!universo) {
-    return;
-  }
-
-  const nombre = obtenerTexto("cuerpoNombre", "Cuerpo");
-  const masa = obtenerNumero("cuerpoMasa", 1e20);
-  const x = obtenerNumero("distancia", 0);
-  const y = 0;
-  const vx = 0;
-  const vy = obtenerNumero("velocidad", 0);
-  const radio = Math.max(1, obtenerNumero("cuerpoRadio", 8));
-  const color = obtenerTexto("cuerpoColor", "#6ea8fe");
-
-  const cuerpo = new CuerpoCeleste(nombre, masa, x, y, vx, vy, radio, color);
-  universo.agregarCuerpo(cuerpo);
-  actualizarEscala();
-
-  contadorCuerposAgregados += 1;
-  actualizarMensajeAgregado(
-    `Cuerpo agregado: ${nombre} (#${contadorCuerposAgregados})`,
-  );
-}
 
 function obtenerNumero(id, valorPorDefecto) {
   const input = document.getElementById(id);
@@ -272,116 +409,21 @@ function actualizarMensajeAgregado(texto) {
   mensaje.textContent = texto;
 }
 
-function dibujarCuerpo(cuerpo) {
-  fill(cuerpo.color);
-  noStroke();
+// funcion para asociar evento de agregar cuerpo desde formulario
+function inicializarFormularioCuerpo() {
+  const botonAgregar = document.getElementById("btnAgregarCuerpo");
 
-  circle(cuerpo.x * escala, cuerpo.y * escala, cuerpo.radio);
-}
-
-function dibujarTrayectoriaDeCuerpo(cuerpo) {
-  if (!universo.pausado) {
-    cuerpo.trayectoria.push({
-      x: cuerpo.x,
-      y: cuerpo.y,
-    });
-
-    if (cuerpo.trayectoria.length > 800) {
-      cuerpo.trayectoria.shift();
-    }
+  if (!botonAgregar) {
+    return;
   }
 
-  stroke(cuerpo.color);
-  strokeWeight(1);
-  noFill();
-
-  beginShape();
-  for (let punto of cuerpo.trayectoria) {
-    vertex(punto.x * escala, punto.y * escala);
-  }
-  endShape();
+  botonAgregar.addEventListener("click", agregarCuerpoDesdeFormulario);
 }
 
-function restablecerSimulacion() {
-  universo = new Universo();
-  contadorCuerposAgregados = 0;
-
-  const form = document.querySelector(".data-container");
-  if (form) {
-    form.reset();
-  }
-
-  const nombre = obtenerTexto("estrellaNombre", "Sol");
-  const masa = obtenerNumero("estrellaMasa", 1.989e30);
-  const radio = Math.max(1, obtenerNumero("estrellaRadio", 30));
-  const color = obtenerTexto("estrellaColor", "#ffcc00");
-
-  sol = new CuerpoCeleste(nombre, masa, 0, 0, 0, 0, radio, color);
-  universo.agregarCuerpo(sol);
-
-  actualizarEscala();
-  actualizarMensajeAgregado("");
-
-  universo.pausado = true;
-}
-
+// funcion para asociar evento de actualizar estrella
 function inicializarFormularioEstrella() {
   const btn = document.getElementById("btnActualizarEstrella");
   if (btn) {
     btn.addEventListener("click", actualizarEstrellaDesdeFormulario);
-  }
-}
-
-function actualizarEstrellaDesdeFormulario() {
-  if (!sol) return;
-
-  const nombre = obtenerTexto("estrellaNombre", "Sol");
-  const masa = obtenerNumero("estrellaMasa", 1.989e30);
-  const radio = Math.max(1, obtenerNumero("estrellaRadio", 30));
-  const color = obtenerTexto("estrellaColor", "#ffcc00");
-
-  sol.nombre = nombre;
-  sol.masa = masa;
-  sol.radio = radio;
-  sol.color = color;
-
-  const msg = document.getElementById("estrella-message");
-  if (msg) {
-    msg.textContent = "Estrella actualizada con éxito.";
-    setTimeout(() => {
-      msg.textContent = "";
-    }, 3000);
-  }
-
-  actualizarEscala();
-}
-
-function dibujarVector(x, y, dx, dy, color, label) {
-  const px = x * escala;
-  const py = y * escala;
-  const targetX = px + dx;
-  const targetY = py + dy;
-
-  stroke(color);
-  strokeWeight(2);
-  line(px, py, targetX, targetY);
-
-  // Punta del vector (flecha)
-  push();
-  translate(targetX, targetY);
-  let angle = atan2(dy, dx);
-  rotate(angle);
-  let arrowSize = 6;
-  fill(color);
-  noStroke();
-  triangle(0, 0, -arrowSize, -arrowSize / 2, -arrowSize, arrowSize / 2);
-  pop();
-
-  // Etiqueta del vector
-  if (label) {
-    fill(color);
-    noStroke();
-    textSize(11);
-    text(label, targetX + 5, targetY + 3);
   }
 }
