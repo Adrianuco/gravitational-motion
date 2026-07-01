@@ -283,7 +283,7 @@ function dibujarVector(x, y, dx, dy, color, label) {
   push();
 
   // movemos el origen al final del vector y rotamos para dibujar el triangulo
-  translate(targetX, targetY);
+  translate(10, 10);
 
   // calculamos el angulo y rotamos
   let angle = atan2(dy, dx);
