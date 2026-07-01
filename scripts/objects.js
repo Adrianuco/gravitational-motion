@@ -70,7 +70,7 @@ class CuerpoCeleste {
 class Universo {
   constructor() {
     this.cuerpos = [];
-    this.dt = 0.016;
+    this.dt = 10000;
     this.t = 0;
     this.pausado = true;
   }
