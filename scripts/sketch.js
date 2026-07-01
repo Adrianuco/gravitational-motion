@@ -92,6 +92,7 @@ function draw() {
           cuerpo.vy * 0.002,
           "#28a745",
           "v",
+          cuerpo.radio,
         );
 
         // vector fuerza 1 N = 1e-21 px
@@ -102,6 +103,7 @@ function draw() {
           cuerpo.fy * 1e-21,
           "#dc3545",
           "F",
+          cuerpo.radio,
         );
       }
     }
@@ -275,7 +277,7 @@ function dibujarVector(x, y, dx, dy, color, label) {
   // dibujamos la linea
   stroke(color);
   strokeWeight(2);
-  line(px, py, targetX, targetY);
+  line(px, py, 10, 10);
 
   // utlizamos push y pop para poder manipular el canvas
   push();
